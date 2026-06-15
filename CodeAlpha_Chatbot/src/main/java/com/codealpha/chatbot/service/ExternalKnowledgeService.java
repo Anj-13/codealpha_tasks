@@ -68,7 +68,25 @@ public class ExternalKnowledgeService {
         try {
             String json = get(removalBase);
             List<Map<String, Object>> records = mapper.readValue(json, new TypeReference<>() {});
-            return "Verified unique records in Task 1 database: " + records.size() + ".";
+            if (records.isEmpty()) {
+                return "No records found in the redundancy system.";
+            }
+            StringBuilder sb = new StringBuilder("Records in system (" + records.size() + " total):\n");
+            int limit = Math.min(records.size(), 5);
+            for (int i = 0; i < limit; i++) {
+                Map<String, Object> rec = records.get(i);
+                sb.append("  ").append(rec.get("fullName"))
+                    .append(" (").append(rec.get("email")).append(")")
+                    .append(" - ").append(rec.get("status"));
+                if (rec.get("validationReason") != null) {
+                    sb.append(" [").append(rec.get("validationReason")).append("]");
+                }
+                sb.append("\n");
+            }
+            if (records.size() > limit) {
+                sb.append("  ... and ").append(records.size() - limit).append(" more.");
+            }
+            return sb.toString();
         } catch (Exception ex) {
             return "I could not read the redundancy service status right now.";
         }

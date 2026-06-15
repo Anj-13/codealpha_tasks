@@ -7,7 +7,7 @@ public class IntentService {
     public String detect(String message) {
         String text = message == null ? "" : message.toLowerCase(Locale.ROOT);
 
-        if (text.contains("hello") || text.contains("hi") || text.contains("hey")) {
+        if (text.contains("hello") || text.contains("hi") || text.contains("hey") || text.contains("help") || text.contains("commands") || text.contains("what can") || text.contains("instructions") || text.contains("how do i") || text.contains("what to type")) {
             return "GREETING";
         }
         if (text.contains("route") || text.contains("bus line") || text.contains("where can i go")) {
