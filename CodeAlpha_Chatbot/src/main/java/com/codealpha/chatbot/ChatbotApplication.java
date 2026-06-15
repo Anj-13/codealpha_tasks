@@ -30,7 +30,7 @@ public class ChatbotApplication {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         server.createContext("/api/chat", exchange -> handleChat(exchange, chatService));
-        server.createContext("/", ChatbotApplication::serveIndex);
+        server.createContext("/", ChatbotApplication::serveStatic);
         server.setExecutor(null);
         server.start();
 
@@ -52,20 +52,27 @@ public class ChatbotApplication {
         }
     }
 
-    private static void serveIndex(HttpExchange exchange) throws IOException {
+    private static void serveStatic(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if (!"/".equals(path)) {
-            exchange.sendResponseHeaders(404, -1);
-            return;
+        if ("/".equals(path)) {
+            path = "/index.html";
         }
 
-        try (InputStream input = ChatbotApplication.class.getResourceAsStream("/web/index.html")) {
+        String resourcePath = "/web" + path;
+        String contentType = "text/html; charset=UTF-8";
+        if (path.endsWith(".css")) {
+            contentType = "text/css; charset=UTF-8";
+        } else if (path.endsWith(".js")) {
+            contentType = "application/javascript; charset=UTF-8";
+        }
+
+        try (InputStream input = ChatbotApplication.class.getResourceAsStream(resourcePath)) {
             if (input == null) {
                 exchange.sendResponseHeaders(404, -1);
                 return;
             }
             byte[] bytes = input.readAllBytes();
-            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            exchange.getResponseHeaders().set("Content-Type", contentType);
             exchange.sendResponseHeaders(200, bytes.length);
             try (OutputStream output = exchange.getResponseBody()) {
                 output.write(bytes);
