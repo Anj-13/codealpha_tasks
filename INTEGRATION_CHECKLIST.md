@@ -10,20 +10,20 @@ This checklist proves that Task 1, Task 3, and Task 4 are connected and working 
 
 ## 1. Build all services
 
-Run in three separate terminals:
+Run each command in its own terminal from the repo root:
 
-```powershell
-Set-Location .\removalsystem
+```cmd
+cd CodeAlpha_RemovalSystem
 .\mvnw.cmd -DskipTests package
 ```
 
-```powershell
-Set-Location .\buspass
+```cmd
+cd CodeAlpha_BusPass
 .\mvnw.cmd -DskipTests package
 ```
 
-```powershell
-Set-Location .\chatbot
+```cmd
+cd CodeAlpha_Chatbot
 .\mvnw.cmd -DskipTests package
 ```
 
@@ -33,22 +33,25 @@ Expected result:
 
 ## 2. Start all services
 
-Run in three separate terminals:
+Run each block in its own terminal from the repo root:
 
-```powershell
-Set-Location .\removalsystem
+**Terminal 1 — Task 1 (port 8081):**
+```cmd
+cd CodeAlpha_RemovalSystem
 java -jar target\removalsystem-0.0.1-SNAPSHOT.jar
 ```
 
-```powershell
-Set-Location .\buspass
+**Terminal 2 — Task 3 (port 8082):**
+```cmd
+cd CodeAlpha_BusPass
 java -jar target\buspass-0.0.1-SNAPSHOT.jar
 ```
 
-```powershell
-Set-Location .\chatbot
-$env:BUSPASS_BASE_URL="http://localhost:8082/api/buspass"
-$env:REMOVAL_BASE_URL="http://localhost:8081/api/records"
+**Terminal 3 — Task 4 (port 8090):**
+```cmd
+cd CodeAlpha_Chatbot
+set BUSPASS_BASE_URL=http://localhost:8082/api/buspass
+set REMOVAL_BASE_URL=http://localhost:8081/api/records
 .\mvnw.cmd -q exec:java
 ```
 
@@ -60,9 +63,11 @@ Expected result:
 
 ## 3. Verify Task 3 API and dynamic scale metrics
 
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8082/api/buspass/routes" -Method Get
-Invoke-RestMethod -Uri "http://localhost:8082/api/buspass/metrics/scale" -Method Get
+Run each in any terminal:
+
+```cmd
+curl http://localhost:8082/api/buspass/routes
+curl http://localhost:8082/api/buspass/metrics/scale
 ```
 
 Expected result:
@@ -74,32 +79,28 @@ Expected result:
 
 Submit a unique record once, then submit the same payload again.
 
-```powershell
-$payload = '{"fullName":"Cloud Test User","email":"cloud.test.user@example.com","phone":"07000111222","address":"Leeds"}'
-Invoke-RestMethod -Uri "http://localhost:8081/api/records" -Method Post -ContentType "application/json" -Body $payload
-Invoke-RestMethod -Uri "http://localhost:8081/api/records" -Method Post -ContentType "application/json" -Body $payload
+```cmd
+curl -X POST http://localhost:8081/api/records -H "Content-Type: application/json" -d "{\"fullName\":\"Cloud Test User\",\"email\":\"cloud.test.user@example.com\",\"phone\":\"07000111222\",\"address\":\"Leeds\"}"
+curl -X POST http://localhost:8081/api/records -H "Content-Type: application/json" -d "{\"fullName\":\"Cloud Test User\",\"email\":\"cloud.test.user@example.com\",\"phone\":\"07000111222\",\"address\":\"Leeds\"}"
 ```
 
 Expected result:
 
-- First call returns a stored `UNIQUE` record.
-- Second call is rejected as `REDUNDANT` (duplicate not added).
+- First call returns a stored `UNIQUE` record (HTTP 201).
+- Second call is rejected as `REDUNDANT` (HTTP 409).
 
 ## 5. Verify Task 3 -> Task 1 integration path
 
-Book one ticket using a real route code from step 3.
+Get a route code first, then book a ticket.
 
-```powershell
-$routes = Invoke-RestMethod -Uri "http://localhost:8082/api/buspass/routes" -Method Get
-$routeCode = $routes[0].code
-$book = @{
-	passengerName = "Integration Demo"
-	email = "integration.demo.$((Get-Random -Maximum 100000))@example.com"
-	routeCode = $routeCode
-	travelDate = (Get-Date).AddDays(1).ToString("yyyy-MM-dd")
-	passengerCategory = "ADULT"
-} | ConvertTo-Json
-Invoke-RestMethod -Uri "http://localhost:8082/api/buspass/tickets/book" -Method Post -ContentType "application/json" -Body $book
+```cmd
+curl http://localhost:8082/api/buspass/routes
+```
+
+Pick a route code from the response (e.g. `LON-MAN`), then run:
+
+```cmd
+curl -X POST http://localhost:8082/api/buspass/tickets/book -H "Content-Type: application/json" -d "{\"passengerName\":\"Integration Demo\",\"email\":\"integration.demo@example.com\",\"routeCode\":\"LON-MAN\",\"travelDate\":\"2026-06-16\",\"passengerCategory\":\"ADULT\"}"
 ```
 
 Expected result:
@@ -110,10 +111,10 @@ Expected result:
 
 ## 6. Verify Task 4 chatbot reads Task 1 and Task 3
 
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8090/api/chat" -Method Post -ContentType "application/json" -Body '{"message":"show routes"}'
-Invoke-RestMethod -Uri "http://localhost:8090/api/chat" -Method Post -ContentType "application/json" -Body '{"message":"server scale status"}'
-Invoke-RestMethod -Uri "http://localhost:8090/api/chat" -Method Post -ContentType "application/json" -Body '{"message":"show redundancy records"}'
+```cmd
+curl -X POST http://localhost:8090/api/chat -H "Content-Type: application/json" -d "{\"message\":\"show routes\"}"
+curl -X POST http://localhost:8090/api/chat -H "Content-Type: application/json" -d "{\"message\":\"server scale status\"}"
+curl -X POST http://localhost:8090/api/chat -H "Content-Type: application/json" -d "{\"message\":\"show redundancy records\"}"
 ```
 
 Expected result:

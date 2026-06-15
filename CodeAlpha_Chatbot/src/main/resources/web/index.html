@@ -4,88 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cloud Assistant Chatbot</title>
-  <style>
-    :root {
-      --ink: #1f2937;
-      --paper: #f4efe5;
-      --brand: #0f766e;
-      --accent: #f97316;
-      --card: #ffffff;
-    }
-    body {
-      margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      color: var(--ink);
-      background: radial-gradient(circle at top left, #fde68a, transparent 45%),
-                  radial-gradient(circle at bottom right, #99f6e4, transparent 50%),
-                  var(--paper);
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 16px;
-    }
-    .chat {
-      width: min(720px, 100%);
-      background: var(--card);
-      border: 2px solid rgba(0, 0, 0, 0.1);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-    }
-    h1 {
-      margin: 0 0 12px;
-      font-size: 1.6rem;
-    }
-    #messages {
-      height: 320px;
-      overflow: auto;
-      padding: 12px;
-      background: #fffdf8;
-      border-radius: 14px;
-      border: 1px solid #e5e7eb;
-      margin-bottom: 12px;
-    }
-    .msg {
-      margin: 8px 0;
-      padding: 10px 12px;
-      border-radius: 10px;
-      line-height: 1.4;
-      animation: fadeIn 0.25s ease;
-    }
-    .user { background: #e0f2fe; }
-    .bot { background: #ecfccb; }
-    form {
-      display: flex;
-      gap: 8px;
-    }
-    input {
-      flex: 1;
-      font-size: 1rem;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #cbd5e1;
-    }
-    button {
-      background: linear-gradient(120deg, var(--brand), #14b8a6);
-      color: white;
-      border: 0;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <section class="chat">
     <h1>Cloud Project Chatbot</h1>
     <div id="messages"></div>
+    <div class="suggestions" id="suggestions"></div>
     <form id="chat-form">
-      <input id="text" placeholder="Ask about routes, booking, scaling, or redundancy" required>
+      <input id="text" placeholder="Type a message or tap a suggestion above" required>
       <button type="submit">Send</button>
     </form>
   </section>
@@ -95,6 +22,10 @@
     const form = document.getElementById("chat-form");
     const textInput = document.getElementById("text");
 
+    const suggestions = [
+      "show routes", "book a ticket", "server scale status", "show redundancy records", "help"
+    ];
+
     function appendMessage(role, text) {
       const div = document.createElement("div");
       div.className = `msg ${role}`;
@@ -103,26 +34,41 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    appendMessage("bot", "Hello. Ask me about Task 1 records, Task 3 routes, or system scaling.");
+    function renderSuggestions() {
+      const container = document.getElementById("suggestions");
+      container.innerHTML = "";
+      suggestions.forEach(cmd => {
+        const btn = document.createElement("button");
+        btn.textContent = cmd;
+        btn.addEventListener("click", () => sendMessage(cmd));
+        container.appendChild(btn);
+      });
+    }
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const message = textInput.value.trim();
-      if (!message) return;
-      appendMessage("user", message);
+    async function sendMessage(text) {
+      if (!text.trim()) return;
+      appendMessage("user", text);
       textInput.value = "";
-
+      renderSuggestions();
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ message: text })
         });
         const data = await response.json();
         appendMessage("bot", `[${data.intent}] ${data.response}`);
       } catch {
         appendMessage("bot", "Chat service error. Please try again.");
       }
+    }
+
+    appendMessage("bot", "Hello! Tap a suggestion below or type a message.");
+    renderSuggestions();
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendMessage(textInput.value.trim());
     });
   </script>
 </body>
