@@ -1,8 +1,8 @@
 package com.codealpha.buspass.controller;
 
 import java.util.List;
-import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,12 +10,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.codealpha.buspass.dto.BookTicketRequest;
+import com.codealpha.buspass.dto.LookupTicketRequest;
 import com.codealpha.buspass.dto.RouteResponse;
 import com.codealpha.buspass.dto.ScaleMetricsResponse;
 import com.codealpha.buspass.dto.TicketResponse;
+import com.codealpha.buspass.dto.TicketVerificationResponse;
 import com.codealpha.buspass.service.ScaleService;
 import com.codealpha.buspass.service.TicketService;
 
@@ -41,18 +44,19 @@ public class BusPassController {
 
     @PostMapping("/tickets/book")
     public ResponseEntity<TicketResponse> book(@Valid @RequestBody BookTicketRequest request) {
-        return ResponseEntity.ok(ticketService.bookTicket(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.bookTicket(request));
     }
 
-    @GetMapping("/tickets/{ticketNumber}")
-    public ResponseEntity<TicketResponse> ticket(@PathVariable String ticketNumber) {
-        return ResponseEntity.ok(ticketService.getByTicketNumber(ticketNumber));
+    // A POST body keeps the passenger's email out of URLs and access logs.
+    @PostMapping("/tickets/lookup")
+    public ResponseEntity<TicketResponse> lookup(@Valid @RequestBody LookupTicketRequest request) {
+        return ResponseEntity.ok(ticketService.lookup(request.getTicketNumber(), request.getEmail()));
     }
 
     @GetMapping("/tickets/{ticketNumber}/verify")
-    public ResponseEntity<Map<String, Object>> verify(@PathVariable String ticketNumber) {
-        boolean valid = ticketService.verifyTicket(ticketNumber);
-        return ResponseEntity.ok(Map.of("ticketNumber", ticketNumber, "valid", valid));
+    public ResponseEntity<TicketVerificationResponse> verify(@PathVariable String ticketNumber,
+                                                             @RequestParam(required = false) String token) {
+        return ResponseEntity.ok(ticketService.verifyTicket(ticketNumber, token));
     }
 
     @GetMapping("/metrics/scale")

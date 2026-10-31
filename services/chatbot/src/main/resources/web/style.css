@@ -43,6 +43,7 @@ h1 {
   padding: 10px 12px;
   border-radius: 10px;
   line-height: 1.4;
+  white-space: pre-line;
   animation: fadeIn 0.25s ease;
 }
 .user { background: #e0f2fe; }

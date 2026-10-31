@@ -3,6 +3,7 @@ package com.dataredundancy.removalsystem.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class RecordRequest {
@@ -18,6 +19,7 @@ public class RecordRequest {
 
     @NotBlank(message = "Phone is required")
     @Size(min = 7, max = 20, message = "Phone length must be between 7 and 20 characters")
+    @Pattern(regexp = "[+0-9 ()-]*", message = "Phone may only contain digits, spaces and + ( ) -")
     private String phone;
 
     @Size(max = 255, message = "Address must be at most 255 characters")

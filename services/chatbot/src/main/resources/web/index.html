@@ -23,7 +23,7 @@
     const textInput = document.getElementById("text");
 
     const suggestions = [
-      "show routes", "book a ticket", "server scale status", "show redundancy records", "help"
+      "show routes", "what are the fares", "book a ticket", "how does validation work", "show redundancy records", "server scale status", "help"
     ];
 
     function appendMessage(role, text) {
@@ -57,7 +57,7 @@
           body: JSON.stringify({ message: text })
         });
         const data = await response.json();
-        appendMessage("bot", `[${data.intent}] ${data.response}`);
+        appendMessage("bot", response.ok ? data.response : data.message);
       } catch {
         appendMessage("bot", "Chat service error. Please try again.");
       }

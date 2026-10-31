@@ -19,4 +19,6 @@ public interface CustomerRecordRepository extends JpaRepository<CustomerRecord, 
 	boolean existsByPhone(String phone);
 
 	boolean existsByEmailIgnoreCaseAndPhone(String email, String phone);
+
+	Optional<CustomerRecord> findTopByOrderByCreatedAtDesc();
 }

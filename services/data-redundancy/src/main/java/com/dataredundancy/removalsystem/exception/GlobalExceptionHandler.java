@@ -54,6 +54,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(HttpStatus.NOT_FOUND, ex.getMessage()));
     }
 
+    @ExceptionHandler(AdminKeyRejectedException.class)
+    public ResponseEntity<Object> handleAdminKeyRejected(AdminKeyRejectedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(HttpStatus.FORBIDDEN, ex.getMessage()));
+    }
+
     // The fingerprint constraint is the last line of defence if two instances share a database.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleConstraintViolation(DataIntegrityViolationException ex) {

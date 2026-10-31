@@ -1,6 +1,9 @@
 package com.codealpha.chatbot.service;
 
+import com.codealpha.chatbot.model.AnswerSource;
 import com.codealpha.chatbot.model.ChatResponse;
+import com.codealpha.chatbot.model.Intent;
+import com.codealpha.chatbot.model.MessageDetails;
 
 public class ChatService {
 
@@ -13,27 +16,29 @@ public class ChatService {
     }
 
     public ChatResponse answer(String message) {
-        String intent = intentService.detect(message);
-        String response = switch (intent) {
-            case "GREETING" -> """
-                Hello! Here is what you can ask me:
-                \u2022 "show routes" \u2014 list all bus routes
-                \u2022 "book a ticket" \u2014 how to book
-                \u2022 "server scale status" \u2014 scaling metrics
-                \u2022 "show redundancy records" \u2014 records in the system
-                \u2022 "help" or "commands" \u2014 show this message again""";
-            case "ROUTES" -> externalKnowledgeService.fetchRoutesSummary();
-            case "BOOKING_HELP" -> "Book via POST /api/buspass/tickets/book with passengerName, email, routeCode, travelDate, and passengerCategory.";
-            case "SCALING" -> externalKnowledgeService.fetchScaleSummary();
-            case "REDUNDANCY_STATUS" -> externalKnowledgeService.fetchRecordSummary();
-            default -> """
-                I didn't understand that. Try one of these:
-                \u2022 "show routes"
-                \u2022 "book a ticket"
-                \u2022 "server scale status"
-                \u2022 "show redundancy records"
-                Or type "help" to see all options.""";
+        Intent intent = intentService.detect(message);
+
+        if (StaticResponses.covers(intent)) {
+            return new ChatResponse(intent, StaticResponses.forIntent(intent), AnswerSource.STATIC);
+        }
+
+        MessageDetails details = MessageDetails.from(message);
+        return switch (intent) {
+            case ROUTES -> live(intent, externalKnowledgeService.fetchRoutesSummary());
+            case PRICING -> live(intent, StaticResponses.FARE_RULES + "\n\n" + externalKnowledgeService.fetchFaresSummary());
+            case SCALING -> live(intent, externalKnowledgeService.fetchScaleSummary());
+            case REDUNDANCY_STATUS -> live(intent, externalKnowledgeService.fetchRecordSummary());
+            case BOOKING_LOOKUP -> details.ticketNumber() == null || details.email() == null
+                ? new ChatResponse(intent, StaticResponses.LOOKUP_NEEDS_DETAILS, AnswerSource.STATIC)
+                : live(intent, externalKnowledgeService.lookupBooking(details.ticketNumber(), details.email()));
+            case VALIDATION_CHECK -> details.name() == null || details.email() == null || details.phone() == null
+                ? new ChatResponse(intent, StaticResponses.CHECK_NEEDS_DETAILS, AnswerSource.STATIC)
+                : live(intent, externalKnowledgeService.validateRecord(details.name(), details.email(), details.phone()));
+            default -> throw new IllegalStateException("No answer defined for " + intent);
         };
-        return new ChatResponse(intent, response);
+    }
+
+    private ChatResponse live(Intent intent, String response) {
+        return new ChatResponse(intent, response, AnswerSource.LIVE);
     }
 }

@@ -3,13 +3,15 @@ package com.codealpha.chatbot.model;
 public class ChatResponse {
     private String intent;
     private String response;
+    private AnswerSource source;
 
     public ChatResponse() {
     }
 
-    public ChatResponse(String intent, String response) {
-        this.intent = intent;
+    public ChatResponse(Intent intent, String response, AnswerSource source) {
+        this.intent = intent.name();
         this.response = response;
+        this.source = source;
     }
 
     public String getIntent() {
@@ -26,5 +28,13 @@ public class ChatResponse {
 
     public void setResponse(String response) {
         this.response = response;
+    }
+
+    public AnswerSource getSource() {
+        return source;
+    }
+
+    public void setSource(AnswerSource source) {
+        this.source = source;
     }
 }

@@ -12,6 +12,7 @@ import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/** Live lookups against Tasks 1 and 3. Each one answers in plain text, even when a service is down. */
 public class ExternalKnowledgeService {
 
     private final HttpClient client;
@@ -20,10 +21,16 @@ public class ExternalKnowledgeService {
     private final String removalBase;
 
     public ExternalKnowledgeService(ObjectMapper mapper) {
+        this(mapper,
+            System.getenv().getOrDefault("BUSPASS_BASE_URL", "http://localhost:8082/api/buspass"),
+            System.getenv().getOrDefault("REMOVAL_BASE_URL", "http://localhost:8081/api/records"));
+    }
+
+    public ExternalKnowledgeService(ObjectMapper mapper, String buspassBase, String removalBase) {
         this.mapper = mapper;
         this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
-        this.buspassBase = System.getenv().getOrDefault("BUSPASS_BASE_URL", "http://localhost:8082/api/buspass");
-        this.removalBase = System.getenv().getOrDefault("REMOVAL_BASE_URL", "http://localhost:8081/api/records");
+        this.buspassBase = buspassBase;
+        this.removalBase = removalBase;
     }
 
     public String fetchRoutesSummary() {
@@ -52,6 +59,25 @@ public class ExternalKnowledgeService {
         }
     }
 
+    public String fetchFaresSummary() {
+        try {
+            String json = get(buspassBase + "/routes");
+            List<Map<String, Object>> routes = mapper.readValue(json, new TypeReference<>() {});
+            if (routes.isEmpty()) {
+                return "No routes are configured yet.";
+            }
+            StringBuilder sb = new StringBuilder("Current adult fares:");
+            for (Map<String, Object> route : routes) {
+                sb.append("\n• ").append(route.get("code")).append(" ")
+                    .append(route.get("source")).append(" -> ").append(route.get("destination"))
+                    .append(": £").append(route.get("baseFare"));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            return "I could not reach the bus pass service for current fares.";
+        }
+    }
+
     public String fetchScaleSummary() {
         try {
             String json = get(buspassBase + "/metrics/scale");
@@ -66,6 +92,7 @@ public class ExternalKnowledgeService {
 
     public String fetchRecordSummary() {
         try {
+            // Without an admin key Task 1 masks these fields, so nothing personal is repeated here.
             String json = get(removalBase);
             List<Map<String, Object>> records = mapper.readValue(json, new TypeReference<>() {});
             if (records.isEmpty()) {
@@ -92,6 +119,51 @@ public class ExternalKnowledgeService {
         }
     }
 
+    public String lookupBooking(String ticketNumber, String email) {
+        try {
+            HttpResponse<String> response = post(buspassBase + "/tickets/lookup",
+                Map.of("ticketNumber", ticketNumber, "email", email));
+            if (response.statusCode() == 404) {
+                return "No booking matches that ticket number and email. Please check both and try again.";
+            }
+            if (response.statusCode() != 200) {
+                throw new IOException("HTTP " + response.statusCode());
+            }
+            Map<String, Object> ticket = mapper.readValue(response.body(), new TypeReference<>() {});
+            return "Booking " + ticket.get("status") + ": " + ticket.get("routeName")
+                + " on " + ticket.get("travelDate") + ", seat " + ticket.get("seatNumber")
+                + ". Passenger validation: " + describeValidation(String.valueOf(ticket.get("validationStatus")));
+        } catch (Exception ex) {
+            return "I could not reach the bus pass service to check that booking.";
+        }
+    }
+
+    public String validateRecord(String fullName, String email, String phone) {
+        try {
+            HttpResponse<String> response = post(removalBase + "/validate",
+                Map.of("fullName", fullName, "email", email, "phone", phone));
+            Map<String, Object> result = mapper.readValue(response.body(), new TypeReference<>() {});
+            if (response.statusCode() == 400) {
+                return "That record is not valid: " + result.get("fieldErrors");
+            }
+            if (response.statusCode() != 200) {
+                throw new IOException("HTTP " + response.statusCode());
+            }
+            return result.get("status") + ": " + result.get("validationReason") + ". Nothing was stored.";
+        } catch (Exception ex) {
+            return "I could not reach the data validation service right now.";
+        }
+    }
+
+    private String describeValidation(String status) {
+        return switch (status) {
+            case "VERIFIED" -> "verified.";
+            case "PENDING" -> "pending, because the data validation service could not be reached. It is retried automatically.";
+            case "REVIEW" -> "held for manual review, because the details partly match another record.";
+            default -> "not checked.";
+        };
+    }
+
     private String get(String url) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(url))
@@ -104,5 +176,16 @@ public class ExternalKnowledgeService {
             throw new IOException("HTTP " + response.statusCode());
         }
         return response.body();
+    }
+
+    private HttpResponse<String> post(String url, Map<String, String> payload) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .timeout(Duration.ofSeconds(3))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload)))
+            .build();
+
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 }

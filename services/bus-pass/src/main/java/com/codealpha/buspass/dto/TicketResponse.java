@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.codealpha.buspass.model.BookingStatus;
+import com.codealpha.buspass.model.ValidationStatus;
 
 public class TicketResponse {
 
@@ -13,6 +14,7 @@ public class TicketResponse {
     private String qrToken;
     private String passengerName;
     private String email;
+    private String phone;
     private String routeCode;
     private String routeName;
     private LocalDate travelDate;
@@ -20,6 +22,7 @@ public class TicketResponse {
     private BigDecimal farePaid;
     private String currency;
     private BookingStatus status;
+    private ValidationStatus validationStatus;
     private LocalDateTime createdAt;
 
     public Long getId() {
@@ -60,6 +63,14 @@ public class TicketResponse {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getRouteCode() {
@@ -116,6 +127,14 @@ public class TicketResponse {
 
     public void setStatus(BookingStatus status) {
         this.status = status;
+    }
+
+    public ValidationStatus getValidationStatus() {
+        return validationStatus;
+    }
+
+    public void setValidationStatus(ValidationStatus validationStatus) {
+        this.validationStatus = validationStatus;
     }
 
     public LocalDateTime getCreatedAt() {

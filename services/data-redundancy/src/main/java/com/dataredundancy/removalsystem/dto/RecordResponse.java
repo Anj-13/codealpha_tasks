@@ -14,6 +14,7 @@ public class RecordResponse {
     private RecordStatus status;
     private String validationReason;
     private boolean stored;
+    private boolean masked;
     private LocalDateTime createdAt;
 
     public Long getId() {return id;}
@@ -24,6 +25,7 @@ public class RecordResponse {
     public RecordStatus getStatus() { return status;}
     public String getValidationReason() { return validationReason; }
     public boolean isStored() { return stored; }
+    public boolean isMasked() { return masked; }
     public LocalDateTime getCreatedAt() { return createdAt;}
 
     public void setId(Long id) { this.id = id; }
@@ -34,6 +36,7 @@ public class RecordResponse {
     public void setStatus(RecordStatus status) { this.status = status;}
     public void setValidationReason(String validationReason) { this.validationReason = validationReason; }
     public void setStored(boolean stored) { this.stored = stored; }
+    public void setMasked(boolean masked) { this.masked = masked; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt;}
     
 }
