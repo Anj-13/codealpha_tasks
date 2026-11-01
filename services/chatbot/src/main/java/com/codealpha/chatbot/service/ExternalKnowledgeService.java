@@ -7,6 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -70,7 +71,7 @@ public class ExternalKnowledgeService {
             for (Map<String, Object> route : routes) {
                 sb.append("\n• ").append(route.get("code")).append(" ")
                     .append(route.get("source")).append(" -> ").append(route.get("destination"))
-                    .append(": £").append(route.get("baseFare"));
+                    .append(": £").append(String.format(Locale.ROOT, "%.2f", ((Number) route.get("baseFare")).doubleValue()));
             }
             return sb.toString();
         } catch (Exception ex) {
