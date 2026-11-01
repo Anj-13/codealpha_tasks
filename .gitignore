@@ -1,5 +1,15 @@
 # Build outputs
 **/target/
+**/dist/
+**/node_modules/
+
+# Local databases and secrets
+*.db
+*.mv.db
+*.trace.db
+.env
+.env.*
+!.env.example
 
 # IDE files
 .vscode/

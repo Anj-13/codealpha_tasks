@@ -2,13 +2,27 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Spring Boot-RemovalsystemApplication<removalsystem>",
+            "name": "Task 1 - Data Redundancy",
             "request": "launch",
-            "cwd": "${workspaceFolder}/removalsystem",
+            "cwd": "${workspaceFolder}/services/data-redundancy",
             "mainClass": "com.dataredundancy.removalsystem.RemovalsystemApplication",
-            "projectName": "removalsystem",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "projectName": "removalsystem"
+        },
+        {
+            "type": "java",
+            "name": "Task 3 - Bus Pass",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/services/bus-pass",
+            "mainClass": "com.codealpha.buspass.BuspassApplication",
+            "projectName": "buspass"
+        },
+        {
+            "type": "java",
+            "name": "Task 4 - Chatbot",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/services/chatbot",
+            "mainClass": "com.codealpha.chatbot.ChatbotApplication",
+            "projectName": "chatbot"
         }
     ]
 }
